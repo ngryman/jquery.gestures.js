@@ -13,15 +13,6 @@
   var gestures = ['swipe'];
   var NS = 'gestures' + Math.ceil(Math.random() * Math.pow(10, 10));
   var updateGestures = {};
-  var slice = Array.prototype.slice;
-
-
-  function fireCallback(callback, el) {
-    var args = slice.call(arguments);
-    if (typeof callback == 'function')
-      return callback.apply(el, args.splice(2, args.length));
-    return undefined;
-  }
 
 
   function getCoordinates(event) {
@@ -58,16 +49,34 @@
   }
 
 
+	function createGesture(el, gestureName) {
+		if (el[NS].gestures === undefined)
+			el[NS].gestures = {};
+
+		var gestureOpts = el[NS].gestures;
+
+		if (gestureOpts[gestureName] === undefined) {
+			gestureOpts[gestureName] = {
+			name:   gestureName,
+      update: $.Callbacks(),
+      end:    $.Callbacks()
+			};
+		}
+
+		return gestureOpts[gestureName];
+	}
+
+
   function onMove(event) {
     var el = this,
       opts = el[NS];
 
     // if not moving, discard it
     if (!opts.isMoving) return;
-    
+
     $.each(opts.gestures, function() {
-      var customEvent = fireCallback(updateGestures[this.name], el, event, getCoordinates(event));
-      fireCallback(this.update, el, customEvent);
+      var customEvent = updateGestures[this.name].call(el, event, getCoordinates(event));
+			this.update.fireWith(el, [customEvent])
     });
   }
 
@@ -87,7 +96,7 @@
     $.each(opts.gestures, function() {
       e = createEvent(event, this.data);
       delete this.data;
-      fireCallback(this.end, el, e);
+			this.end.fireWith(el, [e]);
     });
   }
 
@@ -97,17 +106,14 @@
 
     if (!$el.prop(NS))
       $el.prop(NS, {});
-    
+
     var opts = $el.prop(NS);
 
     // stores callbacks
-    opts.gestures = opts.gestures || {};
-    opts.gestures[gestureName] = {
-      name:   gestureName,
-      update: updateCallback,
-      end:    endCallback
-    };
-    
+		var gestures = createGesture(el, gestureName);
+		if (typeof updateCallback == 'function') gestures.update.add(updateCallback);
+		if (typeof endCallback    == 'function') gestures.end.add(endCallback);
+
     // if start is already registered, skip this
     if (opts.x && opts.y) return;
 
@@ -117,7 +123,7 @@
 
       // is moving
       opts.isMoving = true;
-      
+
       // remembers start coordinates
       $.extend(opts, getCoordinates(event));
 
@@ -128,7 +134,7 @@
     });
   }
 
-  
+
   /*$.fn.gestures = function(options) {
     var opts = {
       cancelOnMove: true,
@@ -141,7 +147,7 @@
       case 'function':
         opts.callback = options;
         break;
-      
+
       case 'object':
         $.extend(opts, options);
         break;
@@ -182,7 +188,7 @@
 
     return e;
   };
-  
+
 
   $.fn.swipechange = function(callback) {
     this.each(function() {
@@ -191,7 +197,7 @@
     return this;
   };
 
-  
+
   $.fn.swipeend = function(callback) {
     this.each(function() {
       registerCallbacks(this, 'swipe', null, callback);
