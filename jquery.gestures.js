@@ -71,8 +71,10 @@
 		var el = this,
 			opts = el[NS];
 
-		// if not moving, discard it
-		if (!opts.isMoving) return;
+		// if not pressed, discard it
+		if (!opts.isPressed) return;
+		// is moving
+		opts.isMoving = true;
 
 		$.each(opts.gestures, function() {
 			var customEvent = updateGestures[this.name].call(el, event, getCoordinates(event));
@@ -83,21 +85,26 @@
 
 	function onEnd(event) {
 		var el = this,
-			opts = el[NS], e;
+			opts = el[NS],
+			isMoving = opts.isMoving, e;
 
-		// stop move, reset for next event
+		// reset for next event
+		delete opts.isPressed;
 		delete opts.isMoving;
 		delete opts.x;
 		delete opts.y;
 
 		// unregisters on the fly events
-		$(this).unbind(moveEvent).unbind(endEvent);
+		$(this).unbind(moveEvent, onMove).unbind(endEvent, onEnd);
 
-		$.each(opts.gestures, function() {
-			e = createEvent(event, this.data);
-			delete this.data;
-			this.end.fireWith(el, [e]);
-		});
+		// only triggers end callbacks if moved
+		if (isMoving) {
+			$.each(opts.gestures, function() {
+				e = createEvent(event, this.data);
+				delete this.data;
+				this.end.fireWith(el, [e]);
+			});
+		}
 	}
 
 
@@ -121,8 +128,8 @@
 			var $this = $(this);
 			var opts = $this.prop(NS);
 
-			// is moving
-			opts.isMoving = true;
+			// is pressed
+			opts.isPressed = true;
 
 			// remembers start coordinates
 			$.extend(opts, getCoordinates(event));
