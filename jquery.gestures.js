@@ -3,6 +3,7 @@
  *
  * Support of gestures (touch & mouse) for any element.
  *
+ * @todo: enable per gesture configurable threshold
  */
 
 (function($) {
@@ -13,6 +14,7 @@
 	var gestures = ['swipe'];
 	var NS = 'gestures' + Math.ceil(Math.random() * Math.pow(10, 10));
 	var updateGestures = {};
+	var threshold = 10;
 
 
 	function getCoordinates(event) {
@@ -73,13 +75,23 @@
 
 		// if not pressed, discard it
 		if (!opts.isPressed) return;
-		// is moving
-		opts.isMoving = true;
 
-		$.each(opts.gestures, function() {
-			var customEvent = updateGestures[this.name].call(el, event, getCoordinates(event));
-			this.update.fireWith(el, [customEvent])
-		});
+		// gets coordinates
+		var coordinates = getCoordinates(event);
+		
+		// computes deltas
+		opts.dX = coordinates.x - opts.x;
+		opts.dY = coordinates.y - opts.y;
+
+		// if threshold is reached, we are moving and gestures are activated
+		if (Math.abs(opts.dX) >= threshold || Math.abs(opts.dY) >= threshold) {
+			opts.isMoving = true;
+
+			$.each(opts.gestures, function() {
+				var customEvent = updateGestures[this.name].call(el, event, getCoordinates(event));
+				this.update.fireWith(el, [customEvent])
+			});
+		}
 	}
 
 
@@ -166,6 +178,7 @@
 
 	/*
 	 * swipe gesture
+	 * @todo: use opts.dX, opts.dY to get total delta of event
 	 */
 
 	updateGestures.swipe = function(event, coordinates) {
