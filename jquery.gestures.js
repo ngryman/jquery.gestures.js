@@ -88,7 +88,7 @@
 			opts.isMoving = true;
 
 			$.each(opts.gestures, function() {
-				var customEvent = updateGestures[this.name].call(el, event, getCoordinates(event));
+				var customEvent = updateGestures[this.name].call(el, event, coordinates);
 				this.update.fireWith(el, [customEvent])
 			});
 		}
@@ -112,7 +112,7 @@
 		// only triggers end callbacks if moved
 		if (isMoving) {
 			$.each(opts.gestures, function() {
-				e = createEvent(event, this.data);
+				e = createEvent(event, $.extend(this.data, getCoordinates(event)));
 				delete this.data;
 				this.end.fireWith(el, [e]);
 			});
