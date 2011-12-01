@@ -120,7 +120,7 @@
 		// only triggers end callbacks if moved
 		if (isMoving) {
 			$.each(opts.gestures, function() {
-				e = createEvent(event, $.extend(this.data, getCoordinates(event)));
+				e = createEvent(event, this.data);
 				delete this.data;
 				this.end.fireWith(el, [e]);
 			});
