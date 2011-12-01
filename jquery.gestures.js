@@ -30,9 +30,14 @@
 
 
 	function createEvent(event, data) {
-		if (!data) data = {};
-		data.originalEvent = event;
-		return data;
+		var e = {};
+		
+		if (data)
+			for(var p in data)
+				e[p] = data[p];
+		
+		e.originalEvent = event;
+		return e;
 	}
 
 
@@ -42,9 +47,12 @@
 
 		// first move, stores old coordinates
 		if (gestureOpts.data === undefined) {
-			gestureOpts.data = {};
-			gestureOpts.data.x = opts.x;
-			gestureOpts.data.y = opts.y;
+			gestureOpts.data = {
+				x: opts.x,
+				y: opts.y,
+				startX: opts.x,
+				startY: opts.y
+			};
 		}
 
 		return gestureOpts.data;
@@ -182,8 +190,8 @@
 	 */
 
 	updateGestures.swipe = function(event, coordinates) {
-		var e = createEvent(event),
-			data = createData(this, 'swipe');
+		var data = createData(this, 'swipe'),
+			e = createEvent(event, data);
 
 		// computes deltas
 		var dX = coordinates.x - data.x;
